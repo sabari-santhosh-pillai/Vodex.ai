@@ -1,10 +1,12 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from models.item import ItemCreate, ItemResponse, ItemUpdate
 from database import db
 from bson import ObjectId
-from datetime import datetime
+from datetime import datetime, date
 from loguru import logger
 from bson.errors import InvalidId
+from typing import Optional, List
+from pydantic import ValidationError
 
 router = APIRouter()
 
@@ -21,6 +23,69 @@ async def create_item(item: ItemCreate):
         logger.error(f"Error inserting item: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error inserting item: {str(e)}")
 
+@router.get("/items/filter", response_model=List[ItemResponse])
+async def filter_items(
+    email: Optional[str] = Query(None, description="Filter by exact email match"),
+    expiry_date: Optional[date] = Query(None, description="Filter items expiring after this date"),
+    insert_date: Optional[date] = Query(None, description="Filter items inserted after this date"),
+    quantity: Optional[int] = Query(None, ge=0, description="Filter items with quantity greater than or equal to this number")
+):
+    try:
+        # Initialize filter dictionary
+        filter_query = {}
+
+        # Add filters based on provided parameters
+        if email:
+            filter_query["email"] = email
+        
+        if expiry_date:
+            filter_query["expiry_date"] = {
+                "$gte": expiry_date.isoformat()
+            }
+        
+        if insert_date:
+            filter_query["insert_date"] = {
+                "$gte": insert_date.isoformat()
+            }
+        
+        if quantity is not None:
+            filter_query["quantity"] = {
+                "$gte": quantity
+            }
+
+        logger.debug(f"Applying filter: {filter_query}")
+        
+        # Execute the query
+        cursor = db.Items.find(filter_query)
+        items = await cursor.to_list(length=None)
+        
+        # Process the results
+        processed_items = []
+        for item in items:
+            try:
+                processed_item = {
+                    "id": str(item["_id"]),
+                    "name": item["name"],
+                    "email": item["email"],
+                    "item_name": item["item_name"],
+                    "quantity": item["quantity"],
+                    "expiry_date": datetime.fromisoformat(item["expiry_date"]).date(),
+                    "insert_date": datetime.fromisoformat(item["insert_date"]).date()
+                }
+                processed_items.append(processed_item)
+            except KeyError as ke:
+                logger.error(f"Missing required field in item {item.get('_id', 'unknown')}: {ke}")
+                continue
+            except Exception as e:
+                logger.error(f"Error processing item {item.get('_id', 'unknown')}: {str(e)}")
+                continue
+        
+        return processed_items
+
+    except Exception as e:
+        logger.error(f"Error in filter_items: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.get("/items/{id}", response_model=ItemResponse)
 async def get_item(id: str):
     try:
@@ -33,19 +98,6 @@ async def get_item(id: str):
         return {**item, "id": str(item["_id"])}
     except InvalidId:
         raise HTTPException(status_code=400, detail="Invalid item ID")
-
-@router.get("/items/filter", response_model=list[ItemResponse])
-async def filter_items(name: str):
-    try:
-        items = await db.Items.find({"name": name}).to_list(length=None)
-        for item in items:
-            # Convert ISO format string back to date object
-            item["expiry_date"] = datetime.fromisoformat(item["expiry_date"]).date()
-            item["insert_date"] = datetime.fromisoformat(item["insert_date"]).date()
-        return [{**item, "id": str(item["_id"])} for item in items]
-    except Exception as e:
-        logger.error(f"Error filtering items: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error filtering items: {str(e)}")
 
 @router.put("/items/{id}", response_model=ItemResponse)
 async def update_item(id: str, item_update: ItemUpdate):

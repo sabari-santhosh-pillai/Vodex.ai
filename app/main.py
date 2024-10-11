@@ -38,7 +38,7 @@ app.add_middleware(
 
 # Include routers
 app.include_router(items.router, prefix="/api/v1")
-app.include_router(clock_in.router, prefix="/api/v1")
+app.include_router(clock_in.router, prefix="/api/v1/clock-in")
 
 if __name__ == "__main__":
     import uvicorn
