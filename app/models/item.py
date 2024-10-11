@@ -17,3 +17,8 @@ class ItemUpdate(BaseModel):
 class ItemResponse(ItemCreate):
     id: str
     insert_date: date
+
+    class Config:
+        json_encoders = {
+            date: lambda v: v.isoformat()
+        }

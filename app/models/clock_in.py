@@ -12,3 +12,8 @@ class ClockInUpdate(BaseModel):
 class ClockInResponse(ClockInCreate):
     id: str
     insert_datetime: datetime
+
+    class Config:
+        json_encoders = {
+            datetime: lambda v: v.isoformat()
+        }
