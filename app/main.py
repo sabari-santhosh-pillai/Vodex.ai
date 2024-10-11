@@ -11,7 +11,7 @@ if not os.getenv("MONGO_URI"):
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-from routers import items, clock_in
+from .routers import items, clock_in
 from loguru import logger
 from database import connect_to_mongo, close_mongo_connection
 
