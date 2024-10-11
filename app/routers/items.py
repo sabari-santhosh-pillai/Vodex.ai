@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Query
-from models.item import ItemCreate, ItemResponse, ItemUpdate
+from ..models.item import ItemCreate, ItemResponse, ItemUpdate
 from database import db
 from bson import ObjectId
 from datetime import datetime, date
