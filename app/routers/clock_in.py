@@ -13,7 +13,7 @@ async def create_clock_in(record: ClockInCreate):
     record_data = record.dict()
     record_data["insert_datetime"] = datetime.utcnow()
     try:
-        result = await db.clock_in_records.insert_one(record_data)
+        result = await db.user_clock_in_records.insert_one(record_data)
         return {**record_data, "id": str(result.inserted_id)}
     except Exception as e:
         logger.error(f"Error inserting clock-in record: {str(e)}")
@@ -22,7 +22,7 @@ async def create_clock_in(record: ClockInCreate):
 @router.get("/clock-in/{id}", response_model=ClockInResponse)
 async def get_clock_in(id: str):
     try:
-        record = await db.clock_in_records.find_one({"_id": ObjectId(id)})
+        record = await db.user_clock_in_records.find_one({"_id": ObjectId(id)})
         if record is None:
             raise HTTPException(status_code=404, detail="Clock In record not found")
         return {**record, "id": str(record["_id"])}
@@ -32,7 +32,7 @@ async def get_clock_in(id: str):
 @router.get("/clock-in/filter", response_model=list[ClockInResponse])
 async def filter_clock_in(email: str):
     try:
-        records = await db.clock_in_records.find({"email": email}).to_list(length=None)
+        records = await db.user_clock_in_records.find({"email": email}).to_list(length=None)
         return [{**record, "id": str(record["_id"])} for record in records]
     except Exception as e:
         logger.error(f"Error filtering clock-in records: {str(e)}")
@@ -41,13 +41,13 @@ async def filter_clock_in(email: str):
 @router.put("/clock-in/{id}", response_model=ClockInResponse)
 async def update_clock_in(id: str, clock_in_update: ClockInUpdate):
     try:
-        record = await db.clock_in_records.find_one({"_id": ObjectId(id)})
+        record = await db.user_clock_in_records.find_one({"_id": ObjectId(id)})
         if record is None:
             raise HTTPException(status_code=404, detail="Clock In record not found")
         
         updated_data = {k: v for k, v in clock_in_update.dict().items() if v is not None}
-        await db.clock_in_records.update_one({"_id": ObjectId(id)}, {"$set": updated_data})
-        updated_record = await db.clock_in_records.find_one({"_id": ObjectId(id)})
+        await db.user_clock_in_records.update_one({"_id": ObjectId(id)}, {"$set": updated_data})
+        updated_record = await db.user_clock_in_records.find_one({"_id": ObjectId(id)})
         
         return {**updated_record, "id": str(updated_record["_id"])}
     except InvalidId:
@@ -59,7 +59,7 @@ async def update_clock_in(id: str, clock_in_update: ClockInUpdate):
 @router.delete("/clock-in/{id}")
 async def delete_clock_in(id: str):
     try:
-        result = await db.clock_in_records.delete_one({"_id": ObjectId(id)})
+        result = await db.user_clock_in_records.delete_one({"_id": ObjectId(id)})
         if result.deleted_count == 0:
             raise HTTPException(status_code=404, detail="Clock In record not found")
         return {"message": "Clock In record deleted successfully"}

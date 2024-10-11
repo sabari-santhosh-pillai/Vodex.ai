@@ -5,8 +5,6 @@ from loguru import logger
 # MongoDB connection string from environment variable
 MONGO_URI = os.getenv("MONGO_URI")
 
-print(f"MONGO_URI: {MONGO_URI}")  # Add this line for debugging
-
 if not MONGO_URI:
     raise ValueError("MONGO_URI environment variable is not set")
 
