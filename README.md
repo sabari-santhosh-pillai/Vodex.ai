@@ -19,4 +19,4 @@ To run this project, you need:
 
 ## Running the Application
 
-uvicorn main:app --reload
+python main.py
