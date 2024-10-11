@@ -10,8 +10,11 @@ COPY . /app
 # Install the necessary Python packages
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Copy all source files
+COPY . .
+
 # Expose the port on which your app will run
 EXPOSE 8000
 
-# Command to run your FastAPI app
-CMD ["python", "main.py"]
+# Command to run the application
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
