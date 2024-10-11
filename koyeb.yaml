@@ -1,5 +1,7 @@
 version: "v1"
 services:
   - name: vodex-ai-assignment
-    image: vodex-ai-assignment
-    command: python main.py
+    type: web
+    runtime: python3.11
+    buildCommand: pip install -r requirements.txt
+    startCommand: python main.py
